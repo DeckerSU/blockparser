@@ -1,6 +1,6 @@
 // Copyright (c) 2013 NovaCoin Developers
 
-#if defined(PBKDF2_H) && !defined(BITCOIN)
+#if !defined(PBKDF2_H) && !defined(BITCOIN)
 #define PBKDF2_H
 
 #include <openssl/sha.h>

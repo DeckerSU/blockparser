@@ -71,6 +71,16 @@ static double getMem() {
     #endif
 }
 
+/*
+
+gExpectedMagic - from chainparams.cpp:
+
+        pchMessageStart[0] = 0xf9; 
+        pchMessageStart[1] = 0xbe;
+        pchMessageStart[2] = 0xb4;
+        pchMessageStart[3] = 0xd9;
+*/
+
 #if defined BITCOIN
     static const size_t gHeaderSize = 80;
     static auto kCoinDirName = ".bitcoin";
@@ -142,6 +152,19 @@ static double getMem() {
     static auto kCoinDirName = ".unobtanium";
     static const uint32_t gExpectedMagic = 0x03b5d503;
 #endif
+
+#if defined DTT
+    static const size_t gHeaderSize = 80;
+    static auto kCoinDirName = ".komodo/DTT";
+    static const uint32_t gExpectedMagic = 0xbb0700df;
+#endif
+
+#if defined KOMODO
+    static const size_t gHeaderSize = 80;
+    static auto kCoinDirName = ".komodo";
+    static const uint32_t gExpectedMagic = 0x8de4eef9;
+#endif
+
 
 #define DO(x) x
     static inline void   startBlock(const uint8_t *p)                      { DO(gCallback->startBlock(p));         }

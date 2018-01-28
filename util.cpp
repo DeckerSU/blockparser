@@ -590,6 +590,15 @@ static int getCoinType() {
         #if defined(UNOBTANIUM)
             130
         #endif
+
+        #if defined(KOMODO)
+            60
+        #endif
+
+        #if defined(DTT)
+            60
+        #endif
+
     ;
 }
 
@@ -1023,6 +1032,14 @@ const char *getInterestingAddr() {
     #elif defined(UNOBTANIUM)
 
         "udicetdXSo6Zc7vhWgAZfz4XrwagAX34RK"
+
+    #elif defined(KOMODO)
+
+        "RKomodoPpLgMFHBsq8mZLcJvq4GfPhMobQ"
+
+    #elif defined(DTT)
+
+        "RKomodoPpLgMFHBsq8mZLcJvq4GfPhMobQ"
 
     #else
 
