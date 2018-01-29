@@ -525,6 +525,9 @@ struct AllBalances:public Callback {
         SKIP(uint32_t, version, p);
         SKIP(uint256_t, prevBlkHash, p);
         SKIP(uint256_t, blkMerkleRoot, p);
+        #if defined(KOMODO) || defined(DTT)
+        SKIP(uint256_t, blkhashReserved, p);
+        #endif
         LOAD(uint32_t, bTime, p);
         blockTime = bTime;
 

@@ -154,13 +154,13 @@ gExpectedMagic - from chainparams.cpp:
 #endif
 
 #if defined DTT
-    static const size_t gHeaderSize = 80;
+    static const size_t gHeaderSize = 140; // 4+32+32+32+4+4+32; // excluding Equihash solution
     static auto kCoinDirName = ".komodo/DTT";
     static const uint32_t gExpectedMagic = 0xbb0700df;
 #endif
 
 #if defined KOMODO
-    static const size_t gHeaderSize = 80;
+    static const size_t gHeaderSize = 140; // 4+32+32+32+4+4+32; // excluding Equihash solution
     static auto kCoinDirName = ".komodo";
     static const uint32_t gExpectedMagic = 0x8de4eef9;
 #endif
@@ -488,8 +488,8 @@ static bool parseBlock(
             SKIP(uint32_t, blkBits, p);
             SKIP(uint256_t, blkNonce, p);
             LOAD_VARINT(nSolutionSize, p);
-
-            /*
+        
+	    /*
 	    for (i=0; i<nSolutionSize; i++) printf("%02x", (unsigned char)p[i]);
 	    printf("\n---\n");
 	    */
@@ -773,7 +773,30 @@ static void getBlockHeader(
 
     hash = allocHash256();
 
-    #if defined(DARKCOIN)
+    #if (defined(KOMODO) || defined(DTT))
+        int dck_index;
+        const uint8_t *pt, *pt_prev;
+        size_t additional_size;
+
+        pt = p;
+        SKIP(uint32_t, version, pt);
+        SKIP(uint256_t, prevBlkHash, pt);
+        SKIP(uint256_t, blkMerkleRoot, pt);
+        SKIP(uint256_t, blkhashReserved, pt);
+        SKIP(uint32_t, blkTime, pt);
+        SKIP(uint32_t, blkBits, pt);
+        SKIP(uint256_t, blkNonce, pt);
+        pt_prev = pt;
+        LOAD_VARINT(blkSolutionsize, pt);
+	additional_size = pt - pt_prev;
+    
+        //printf("[Decker] blkSolutionsize = %d\n",blkSolutionsize);
+        //printf("[Decker] buf_header_size = %d\n",size);
+        //printf("[Decker] additional_size = %d\n",additional_size);
+
+        //for (dck_index = 0; dck_index < gHeaderSize + blkSolutionsize + additional_size; dck_index++) printf("%02x",p[dck_index]); printf("\n");
+        sha256Twice(hash, p, gHeaderSize + blkSolutionsize + additional_size); // hashing all block header, including solution (!)
+    #elif defined(DARKCOIN)
         h9(hash, p, gHeaderSize);
     #elif defined(PAYCON)
         h13(hash, p, gHeaderSize);
@@ -807,6 +830,11 @@ static void buildBlockHeaders() {
     size_t baseOffset = 0;
     size_t earlyMissCnt = 0;
     uint8_t buf[8+gHeaderSize];
+    #if (defined(KOMODO) || defined(DTT))	 
+    uint8_t *buf_header;
+    uint32_t buf_header_size;
+    const uint8_t *p;
+    #endif
     const auto sz = sizeof(buf);
     const auto startTime = Timer::usecs();
     const auto oneMeg = 1024 * 1024;
@@ -822,6 +850,29 @@ static void buildBlockHeaders() {
                 break;
             }
 
+	    #if (defined(KOMODO) || defined(DTT))
+	    //buf_header_size = *(uint32_t *)&buf[4];
+	    p = buf;
+ 	    SKIP(uint32_t, magic, p); 
+
+	    LOAD(uint32_t, buf_header_size, p); 
+            
+            buf_header = (uint8_t *)malloc(8+buf_header_size);
+            lseek(blockFile.fd, -nbRead, SEEK_CUR);
+            nbRead = read(blockFile.fd, buf_header, buf_header_size);
+            if(nbRead<(signed)buf_header_size) {
+                break;
+            }
+            //lseek(blockFile.fd, -nbRead, SEEK_CUR);
+
+            //printf("[Decker] buf_header_size = %d\n",buf_header_size);
+            //printf("[Decker] blkSolutionsize = %d\n",blkSolutionsize);
+
+ 	    //int dck_index;
+            //for (dck_index = 0; dck_index < 8+gHeaderSize; dck_index++) printf("%02x",buf[dck_index]); printf("\n");
+            //for (dck_index = 0; dck_index < 8+buf_header_size; dck_index++) printf("%02x",buf_header[dck_index]); printf("\n");
+	    #endif
+
             startBlock((uint8_t*)0);
 
             uint8_t *hash = 0;
@@ -833,17 +884,39 @@ static void buildBlockHeaders() {
                 prevBlock,
                 hash,
                 earlyMissCnt,
+		#if (defined(KOMODO) || defined(DTT))
+		buf_header
+		#else
                 buf
+		#endif
             );
+	    #if (defined(KOMODO) || defined(DTT))
+	    free(buf_header);
+	    int dck_index;
+	    printf("[Decker] blockSize = %lu\n",blockSize);
+	    printf("prevblock hash: "); for (dck_index = 12+32-1; dck_index >= 12; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // prevblock hash
+            printf("merklroot hash: "); for (dck_index = 12+32+32-1; dck_index >= 12+32; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // merkle root
+            if(unlikely(0!=hash)) {
+            printf("    	  hash: "); for (dck_index = 31; dck_index >= 0; dck_index--) printf("%02x",hash[dck_index]); printf("\n");	
+            }
+            //printf("    	  hash: 027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71\n");
+            //exit(0);
+	    #endif
+
             if(unlikely(0==hash)) {
+                printf("[Decker] End of scanning ...\n");
                 break;
             }
-
+            #if (defined(KOMODO) || defined(DTT))
+	    auto where = lseek(blockFile.fd, (blockSize + 8) - buf_header_size, SEEK_CUR);            
+            #else
             auto where = lseek(blockFile.fd, (blockSize + 8) - sz, SEEK_CUR);
+            #endif
             auto blockOffset = where - blockSize;
             if(where<0) {
                 break;
             }
+ 	    printf("[Decker] blockOffset = 0x%08X\n", blockOffset);
 
             auto block = Block::alloc();
             block->init(hash, &blockFile, blockSize, prevBlock, blockOffset);
