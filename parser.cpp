@@ -475,12 +475,40 @@ static bool parseBlock(
         auto p = block->chunk->getData();
 
             auto header = p;
+	    #if defined(KOMODO) || defined(DTT)
+
+ 	    // int i;	
+
+            SKIP(uint32_t, version, p);
+            SKIP(uint256_t, prevBlkHash, p);
+            SKIP(uint256_t, blkMerkleRoot, p);
+            SKIP(uint256_t, blkhashReserved, p);
+            SKIP(uint32_t, blkTime, p);
+
+            SKIP(uint32_t, blkBits, p);
+            SKIP(uint256_t, blkNonce, p);
+            LOAD_VARINT(nSolutionSize, p);
+
+            /*
+	    for (i=0; i<nSolutionSize; i++) printf("%02x", (unsigned char)p[i]);
+	    printf("\n---\n");
+	    */
+
+            p += nSolutionSize;
+
+	    /*
+	    for (i=0; i<1024; i++) printf("%02x", (unsigned char)p[i]);
+	    printf("\n---\n");
+	    */
+
+	    #else
             SKIP(uint32_t, version, p);
             SKIP(uint256_t, prevBlkHash, p);
             SKIP(uint256_t, blkMerkleRoot, p);
             SKIP(uint32_t, blkTime, p);
             SKIP(uint32_t, blkBits, p);
             SKIP(uint32_t, blkNonce, p);
+	    #endif
 
             #if defined PROTOSHARES
                 SKIP(uint32_t, nBirthdayA, p);
