@@ -892,6 +892,7 @@ static void buildBlockHeaders() {
             );
 	    #if (defined(KOMODO) || defined(DTT))
 	    free(buf_header);
+	    /*
 	    int dck_index;
 	    printf("[Decker] blockSize = %lu\n",blockSize);
 	    printf("prevblock hash: "); for (dck_index = 12+32-1; dck_index >= 12; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // prevblock hash
@@ -899,6 +900,7 @@ static void buildBlockHeaders() {
             if(unlikely(0!=hash)) {
             printf("    	  hash: "); for (dck_index = 31; dck_index >= 0; dck_index--) printf("%02x",hash[dck_index]); printf("\n");	
             }
+            */
             //printf("    	  hash: 027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71\n");
             //exit(0);
 	    #endif
@@ -916,7 +918,7 @@ static void buildBlockHeaders() {
             if(where<0) {
                 break;
             }
- 	    printf("[Decker] blockOffset = 0x%08X\n", blockOffset);
+ 	    //printf("[Decker] blockOffset = 0x%08X\n", blockOffset);
 
             auto block = Block::alloc();
             block->init(hash, &blockFile, blockSize, prevBlock, blockOffset);
