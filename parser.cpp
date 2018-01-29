@@ -341,6 +341,7 @@ static void parseInput(
             if(likely(false==isGenTX)) {
                 auto i = gTXOMap.find(upTXHash);
                 if(unlikely(gTXOMap.end()==i)) {
+                    printf("txhash: "); for (int dck_index = 31; dck_index >= 0; dck_index--) printf("%02x",txHash[dck_index]); printf("\n");	
                     errFatal("failed to locate upstream transaction");
                 }
                 upTX = i->second;
