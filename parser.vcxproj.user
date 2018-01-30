@@ -6,4 +6,9 @@
     <LocalDebuggerEnvironment>BLOCKCHAIN_DIR=$(APPDATA)
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>headers</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerEnvironment>BLOCKCHAIN_DIR=$(APPDATA)</LocalDebuggerEnvironment>
+  </PropertyGroup>
 </Project>
