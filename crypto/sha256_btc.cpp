@@ -3,7 +3,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "crypto/sha256_btc.h"
-
 #include "crypto/common_btc.h"
 
 #include <string.h>

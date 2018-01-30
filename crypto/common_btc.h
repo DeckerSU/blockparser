@@ -10,8 +10,8 @@
 #endif
 
 #include <stdint.h>
-
 #include "crypto/endian_btc.h"
+
 
 uint16_t static inline ReadLE16(const unsigned char* ptr)
 {

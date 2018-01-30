@@ -9,7 +9,13 @@
 
 #include <util.h>
 #include <timer.h>
+#  ifdef _MSC_VER
+#   include <malloc.h>
+#   define alloca _alloca
+#  else
 #include <alloca.h>
+#endif
+
 #include <common.h>
 #include <errlog.h>
 #include <rmd160.h>

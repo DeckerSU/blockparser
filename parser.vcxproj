@@ -70,7 +70,8 @@
     <IncludePath>C:\boost;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\boost;$(IncludePath)</IncludePath>
+    <IncludePath>C:\OpenSSL-Win64\include;C:\boost;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\OpenSSL-Win64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\boost;$(IncludePath)</IncludePath>
@@ -109,8 +110,11 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BITCOIN=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>KOMODO=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>libeay32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -121,7 +125,6 @@
   <ItemGroup>
     <ClCompile Include="callback.cpp" />
     <ClCompile Include="cb\allBalances.cpp" />
-    <ClCompile Include="cb\closure.cpp" />
     <ClCompile Include="cb\dumpTX.cpp" />
     <ClCompile Include="cb\headers.cpp" />
     <ClCompile Include="cb\help.cpp" />
@@ -133,6 +136,8 @@
     <ClCompile Include="cb\taint.cpp" />
     <ClCompile Include="cb\transactions.cpp" />
     <ClCompile Include="cb\txoTypes.cpp" />
+    <ClCompile Include="crypto\ripemd160_btc.cpp" />
+    <ClCompile Include="crypto\sha256_btc.cpp" />
     <ClCompile Include="h9\aes_helper.c" />
     <ClCompile Include="h9\blake.c" />
     <ClCompile Include="h9\bmw.c" />
@@ -152,6 +157,7 @@
     <ClCompile Include="scrypt\pbkdf2.cpp" />
     <ClCompile Include="scrypt\scrypt.cpp" />
     <ClCompile Include="sha256.cpp" />
+    <ClCompile Include="timer.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>

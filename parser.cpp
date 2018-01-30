@@ -13,6 +13,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#if _MSC_VER
+#define lseek(fp, offset, whence) _lseeki64(fp, offset, whence)
+#endif // _MS
+
+
 #if !defined(S_ISDIR)
     #define S_ISDIR(mode) (S_IFDIR==((mode) & S_IFMT))
 #endif
@@ -155,13 +160,23 @@ gExpectedMagic - from chainparams.cpp:
 
 #if defined DTT
     static const size_t gHeaderSize = 140; // 4+32+32+32+4+4+32; // excluding Equihash solution
-    static auto kCoinDirName = ".komodo/DTT";
+#ifndef _WIN32
+	static auto kCoinDirName = ".komodo/DTT";
+#else
+	static auto kCoinDirName = "Komodo/DTT";
+#endif // !_WIN32
     static const uint32_t gExpectedMagic = 0xbb0700df;
 #endif
 
 #if defined KOMODO
     static const size_t gHeaderSize = 140; // 4+32+32+32+4+4+32; // excluding Equihash solution
-    static auto kCoinDirName = ".komodo";
+#ifndef _WIN32
+	static auto kCoinDirName = ".komodo";
+#else
+	static auto kCoinDirName = "Komodo";
+#endif // !_WIN32
+
+	
     static const uint32_t gExpectedMagic = 0x8de4eef9;
 #endif
 
@@ -846,6 +861,7 @@ static void buildBlockHeaders() {
 
         while(1) {
 
+
             auto nbRead = read(blockFile.fd, buf, sz);
             if(nbRead<(signed)sz) {
                 break;
@@ -860,6 +876,7 @@ static void buildBlockHeaders() {
             
             buf_header = (uint8_t *)malloc(8+buf_header_size);
             lseek(blockFile.fd, -nbRead, SEEK_CUR);
+			
             nbRead = read(blockFile.fd, buf_header, buf_header_size);
             if(nbRead<(signed)buf_header_size) {
                 break;
@@ -911,7 +928,7 @@ static void buildBlockHeaders() {
                 break;
             }
             #if (defined(KOMODO) || defined(DTT))
-	    auto where = lseek(blockFile.fd, (blockSize + 8) - buf_header_size, SEEK_CUR);            
+			auto where = lseek(blockFile.fd, (blockSize + 8) - buf_header_size, SEEK_CUR);            
             #else
             auto where = lseek(blockFile.fd, (blockSize + 8) - sz, SEEK_CUR);
             #endif
@@ -1084,7 +1101,12 @@ static void findBlockFiles() {
         sprintf(buf, fmt, blkDatId++);
 
         auto fileName = blockChainDir + std::string(buf) ;
-        auto fd = open(fileName.c_str(), O_RDONLY);
+#ifdef _MSC_VER
+		auto fd = open(fileName.c_str(), O_RDONLY | O_BINARY);
+#else
+		auto fd = open(fileName.c_str(), O_RDONLY);
+#endif 
+
         if(fd<0) {
             if(1<blkDatId) {
                 break;

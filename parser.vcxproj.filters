@@ -39,9 +39,6 @@
     <ClCompile Include="cb\allBalances.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cb\closure.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="cb\dumpTX.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -115,6 +112,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scrypt\scrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\ripemd160_btc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\sha256_btc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
