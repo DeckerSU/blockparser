@@ -363,10 +363,11 @@ static void parseInput(
             }
         }
 
-        SKIP(uint256_t, dummyUpTXhash, p);
-        LOAD(uint32_t, upOutputIndex, p);
-        LOAD_VARINT(inputScriptSize, p);
+        SKIP(uint256_t, dummyUpTXhash, p); // tx hash, each input refers to an output in previous tx (for coinbase hash = 0)
+        LOAD(uint32_t, upOutputIndex, p); // index refers to an output in previous tx (for coinbase = 0xFFFFFFFF)
+        LOAD_VARINT(inputScriptSize, p); // variable length integer : scriptLength : The length of script byte data following 
 
+		// if upTX == 0 (in coinbase tx case too, skip parsing upTX)
         if(!skip && 0!=upTX) {
             auto inputScript = p;
             auto upTXOutputs = upTX->getData();
@@ -428,7 +429,8 @@ static void parseTX(
     uint8_t *txHash = 0;
 
     if(gNeedUpstream && !skip) {
-        auto txEnd = p;
+		printf("[Decker] if(gNeedUpstream && !skip) { ... }\n");
+		auto txEnd = p;
         txHash = allocHash256();
         parseTX<true>(block, txEnd);
         sha256Twice(txHash, txStart, txEnd - txStart);
@@ -438,7 +440,7 @@ static void parseTX(
         startTX(p, txHash);
     }
 
-        #if defined(CLAM)
+        #if defined(CLAM) || defined(KOMODO) || defined(DTT)
             LOAD(uint32_t, nVersion, p);
         #else
             SKIP(uint32_t, nVersion, p);
@@ -459,9 +461,11 @@ static void parseTX(
             txoOffset = block->chunk->getOffset() + (p - block->chunk->getData());
         }
 
-        parseOutputs<skip, false>(p, txHash);
+		parseOutputs<skip, false>(p, txHash);
+		const uint8_t *outputsEnd = p;
 
         if(txo) {
+			printf("[Decker] txo = 0x%08x\n", txo);
             size_t txoSize = p - outputsStart;
             txo->init(
                 block->chunk->getBlockFile(),
@@ -478,6 +482,40 @@ static void parseTX(
                 p += strCLAMSpeechLen;
             }
         #endif
+
+		#if defined(KOMODO) || defined(DTT)	
+			if (1 < nVersion) {
+				// for KMD and assets we should somehow handle nVersion, if nVersion == 1 - this is common transaction,
+				// but if nVersion == 2 - seems it JoinSplit tx and we should somehow handle this situation. 
+
+				
+				printf("[Decker] Block #%8" PRIu64 "\n", block->height);
+
+				uint8_t JSDescriptionIndex;
+				LOAD(uint8_t, JSDescriptionCount, p);
+
+				for (JSDescriptionIndex = 0; JSDescriptionIndex < JSDescriptionCount; JSDescriptionIndex++) {
+
+					LOAD(uint64_t, vpub_old, p);
+					LOAD(uint64_t, vpub_new, p);
+
+					//printf("[Decker] skip = 0x%08x\n", skip);
+					printf("[Decker] JSDescriptionCount = %d, vpub_old = %" PRIu64 ", vpub_new = %" PRIu64 "\n", JSDescriptionCount, vpub_old, vpub_new);
+					
+					p += 1786;
+				}
+
+				p += 96;
+
+				// before exit from this proc we should move pointer p to the end of current tx [!]
+
+
+				/*if (JSDescriptionCount == 2) {
+					printf("[Decker] p = 0x%" PRIx64 ", block->chunk->getData() = 0x%" PRIx64 "\n", p, block->chunk->getData());
+				}*/
+			}
+		#endif
+
 
     if(!skip) {
         endTX(p);
