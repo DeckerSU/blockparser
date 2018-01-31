@@ -414,7 +414,7 @@ static void parseTX(
     uint8_t *txHash = 0;
 
     if(gNeedUpstream && !skip) {
-		printf("[Decker] if(gNeedUpstream && !skip) { ... }\n");
+		//printf("[Decker] if(gNeedUpstream && !skip) { ... }\n");
 		auto txEnd = p;
         txHash = allocHash256();
         parseTX<true>(block, txEnd);
