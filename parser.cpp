@@ -465,7 +465,6 @@ static void parseTX(
 		const uint8_t *outputsEnd = p;
 
         if(txo) {
-			printf("[Decker] txo = 0x%08x\n", txo);
             size_t txoSize = p - outputsStart;
             txo->init(
                 block->chunk->getBlockFile(),
