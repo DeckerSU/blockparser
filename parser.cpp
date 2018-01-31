@@ -473,7 +473,7 @@ static void parseTX(
 				// but if nVersion == 2 - seems it JoinSplit tx and we should somehow handle this situation. 
 
 				
-				printf("[Decker] Block #%8" PRIu64 "\n", block->height);
+				//printf("[Decker] Block #%8" PRIu64 "\n", block->height);
 
 				uint8_t JSDescriptionIndex;
 				LOAD(uint8_t, JSDescriptionCount, p);
@@ -484,7 +484,7 @@ static void parseTX(
 					LOAD(uint64_t, vpub_new, p);
 
 					//printf("[Decker] skip = 0x%08x\n", skip);
-					printf("[Decker] JSDescriptionCount = %d, vpub_old = %" PRIu64 ", vpub_new = %" PRIu64 "\n", JSDescriptionCount, vpub_old, vpub_new);
+					//printf("[Decker] JSDescriptionCount = %d, vpub_old = %" PRIu64 ", vpub_new = %" PRIu64 "\n", JSDescriptionCount, vpub_old, vpub_new);
 					
 					p += 1786;
 				}
@@ -944,7 +944,7 @@ static void buildBlockHeaders() {
 	    #endif
 
             if(unlikely(0==hash)) {
-                printf("[Decker] End of scanning ...\n");
+                //printf("[Decker] End of scanning ...\n");
                 break;
             }
             #if (defined(KOMODO) || defined(DTT))
