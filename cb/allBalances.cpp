@@ -354,10 +354,10 @@ struct AllBalances:public Callback {
         CompareAddr compare;
         auto e = allAddrs.end();
         auto s = allAddrs.begin();
-        if(false==csv) {
+        //if(false==csv) {
             info("sorting by balance ...");
             std::sort(s, e, compare);
-        }
+        //}
 
         uint64_t nbRestricts = (uint64_t)restrictMap.size();
         if(0==nbRestricts) {
@@ -406,8 +406,10 @@ struct AllBalances:public Callback {
             }
 
             if(csv) {
+ 		/*
                 printEscapedBinaryBuffer(addr->hash.v, kRIPEMD160ByteSize);
                 putchar('\t');
+		*/
             } else {
                 showHex(
                     addr->hash.v,
@@ -421,13 +423,22 @@ struct AllBalances:public Callback {
             }
 
             if(csv) {
+                if(i<showAddr || 0!=nbRestricts) {
+                    uint8_t buf[64];
+                    hash160ToAddr(buf, addr->hash.v, true, addr->type);
+                    printf(" %s", buf);
+                } else {
+                    printf(" XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                }
+                printf("\n");
+                /*
                 printf(
                     "%" PRIu64 "\t%" PRIu32 "\t%" PRIu64 "\t%" PRIu32 "\n",
                     addr->nbIn,
                     addr->lastIn,
                     addr->nbOut,
                     addr->lastOut
-                );
+                );*/
             } else {
                 if(i<showAddr || 0!=nbRestricts) {
                     uint8_t buf[64];
