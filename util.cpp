@@ -720,7 +720,20 @@ void hash160ToAddr(
     buf[ 2] = (size>> 8) & 0xff;
     buf[ 3] = (size>> 0) & 0xff;
     buf[ 4] = 0;
+#if (defined(KOMODO) || defined(DTT))
+    if (type != 5) {
+	    buf[ 5] = getCoinType() + type; }
+    else buf[ 5] = 85; // script_address started with 'b'
+#else
     buf[ 5] = getCoinType() + type;
+#endif
+    
+/*
+        type = 5
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,85);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,188);
+*/
     sha256Twice(
         4 + 2 + kRIPEMD160ByteSize + buf,
         4 + 1 + buf,
