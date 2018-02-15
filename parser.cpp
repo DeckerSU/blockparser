@@ -891,7 +891,17 @@ static void buildBlockHeaders() {
 	    #if (defined(KOMODO) || defined(DTT))
 	    //buf_header_size = *(uint32_t *)&buf[4];
 	    p = buf;
- 	    SKIP(uint32_t, magic, p); 
+
+	    //SKIP(uint32_t, magic, p); 
+	    LOAD(uint32_t, magic, p);
+	    if (unlikely(gExpectedMagic != magic) && unlikely(0 != magic)) {
+	    	printf("\n");
+	    	printf("[Decker][-] error reading block #%zu, redownload blockchain (!)\n", nbBlocks);
+	    	printf("[Decker][-] %" PRIu32 " %s\n", blockFile.fd, blockFile.name.c_str());
+	    	printf("[Decker][-] filepos = 0x%" PRIx64 "\n", lseek(blockFile.fd, 0L, SEEK_CUR));
+	    	canonicalHexDump(buf, nbRead, "");
+	    	exit(1);
+	    }
 
 	    LOAD(uint32_t, buf_header_size, p); 
             
