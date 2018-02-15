@@ -1,5 +1,9 @@
 <?php
 
+/* 
+    (c) Decker, 2018
+*/
+
 /*
 
 ./parser balances > balances.txt
