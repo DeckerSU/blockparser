@@ -897,17 +897,61 @@ static void buildBlockHeaders() {
         startBlockFile(0);
 
         while(1) {
+			
+			uint64_t pos = lseek(blockFile.fd, 0L, SEEK_CUR);
+			//printf("[Decker][+] filepos = 0x%" PRIx64 " %s\n", pos, blockFile.name.c_str());
+			
+			//if (pos == 0x07fff714 || pos == 0x07fff0cf) {
+			//	printf("[Decker] Should investigate this ... \n");
+			//}
 
-
-            auto nbRead = read(blockFile.fd, buf, sz);
+			auto nbRead = read(blockFile.fd, buf, sz);
             if(nbRead<(signed)sz) {
-                break;
+				//printf("\n[Decker][1] reading block #%d\n", nbBlocks);
+				break;
             }
+
+		/* Edge cases */
+
+		// edge case, like f9 ee e4 8d d6 06 00 00 f9 ee e4 8d d6 06
+		// block header starts twice
+			if ((*(uint32_t *)buf == gExpectedMagic) && (*(uint32_t *)(buf + 8) == gExpectedMagic)) {
+			printf("[Decker][1] edge case #%d\n", nbBlocks);
+			printf("[Decker][-] filepos = 0x%" PRIx64 " %s\n", lseek(blockFile.fd, 0L, SEEK_CUR), blockFile.name.c_str());
+			lseek(blockFile.fd, -nbRead + 8, SEEK_CUR);
+			uint64_t pos = lseek(blockFile.fd, 0L, SEEK_CUR);
+			printf("[Decker][+] filepos = 0x%" PRIx64 " %s\n", pos, blockFile.name.c_str());
+			auto nbRead = read(blockFile.fd, buf, sz);
+				if (nbRead<(signed)sz) {
+					//printf("\n[Decker][1] reading block #%d\n", nbBlocks);
+					break;
+				}
+			}
+
+		// edge case (file end, readed header contains only zeroes)
+		// blk*.dat file can have less than 128 Mb length
+		if ((*(uint32_t *)buf == 0) && (*(uint32_t *)(buf + 4) == 0)) {
+			printf("[Decker][2] edge case #%d\n", nbBlocks);
+			printf("[Decker][-] filepos = 0x%" PRIx64 " %s\n", lseek(blockFile.fd, 0L, SEEK_CUR), blockFile.name.c_str());
+			lseek(blockFile.fd, -nbRead + 8, SEEK_CUR);
+			break;
+		}
 
 	    #if (defined(KOMODO) || defined(DTT))
 	    //buf_header_size = *(uint32_t *)&buf[4];
 	    p = buf;
- 	    SKIP(uint32_t, magic, p); 
+ 	    
+		//SKIP(uint32_t, magic, p); 
+		LOAD(uint32_t, magic, p);
+		if (unlikely(gExpectedMagic != magic)) {
+			printf("\n");
+			printf("[Decker][-] reading block #%d\n", nbBlocks);
+			printf("[Decker][-] %d %s\n", blockFile.fd, blockFile.name.c_str());
+			printf("[Decker][-] filepos = 0x%" PRIx64 "\n", lseek(blockFile.fd, 0L, SEEK_CUR));
+			canonicalHexDump(buf, nbRead, "");
+			exit(1);
+		}
+
 
 	    LOAD(uint32_t, buf_header_size, p); 
             
@@ -916,7 +960,8 @@ static void buildBlockHeaders() {
 			
             nbRead = read(blockFile.fd, buf_header, buf_header_size);
             if(nbRead<(signed)buf_header_size) {
-                break;
+				printf("\n[Decker][3] reading block #%d\n", nbBlocks);
+				break;
             }
             //lseek(blockFile.fd, -nbRead, SEEK_CUR);
 
@@ -947,15 +992,27 @@ static void buildBlockHeaders() {
             );
 	    #if (defined(KOMODO) || defined(DTT))
 	    free(buf_header);
-	    /*
-	    int dck_index;
-	    printf("[Decker] blockSize = %lu\n",blockSize);
-	    printf("prevblock hash: "); for (dck_index = 12+32-1; dck_index >= 12; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // prevblock hash
-            printf("merklroot hash: "); for (dck_index = 12+32+32-1; dck_index >= 12+32; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // merkle root
-            if(unlikely(0!=hash)) {
-            printf("    	  hash: "); for (dck_index = 31; dck_index >= 0; dck_index--) printf("%02x",hash[dck_index]); printf("\n");	
-            }
-            */
+		//printf("[Decker] blockSize = %lu\n", blockSize);
+
+	    
+	    
+		// example of work with uint256_t
+		//uint256_t missedHash;
+		//fromHex(missedHash.v, (const uint8_t *)"046f2ea0280b5cb953474d7ac906bbc63b388875eeb0e74d276429685557b542");
+		
+		//if (0 == memcmp(missedHash.v, hash, sizeof(missedHash))) {
+			
+			//int dck_index;
+			//printf("[Decker] blockSize = %lu\n", blockSize);
+			//printf("prevblock hash: "); for (dck_index = 12 + 32 - 1; dck_index >= 12; dck_index--) printf("%02x", buf[dck_index]); printf("\n"); // prevblock hash
+			//																																	  //printf("merklroot hash: "); for (dck_index = 12+32+32-1; dck_index >= 12+32; dck_index--) printf("%02x",buf[dck_index]); printf("\n"); // merkle root
+			//if (unlikely(0 != hash)) {
+			//	printf("    	  hash: "); for (dck_index = 31; dck_index >= 0; dck_index--) printf("%02x", hash[dck_index]); printf("\n");
+			//}
+			//printf("merklroot hash: "); for (dck_index = 12 + 32 + 32 - 1; dck_index >= 12 + 32; dck_index--) printf("%02x", buf[dck_index]); printf("\n"); // merkle root
+			
+
+		//}
             //printf("    	  hash: 027e3758c3a65b12aa1046462b486d0a63bfa1beae327897f56c5cfb7daaae71\n");
             //exit(0);
 	    #endif
@@ -971,9 +1028,54 @@ static void buildBlockHeaders() {
             #endif
             auto blockOffset = where - blockSize;
             if(where<0) {
+				printf("\n[Decker][4] reading block #%d\n", nbBlocks);
                 break;
             }
  	    //printf("[Decker] blockOffset = 0x%08X\n", blockOffset);
+			
+			/*
+			hash = 96 e5 6a f1 b6 81 9f a1 72 17 07 ff 3a 8d 1b 96 ac d5 10 cf bd 00 59 b0 45 22 e2 6b 86 ab 3a 06
+			hash = 063aab866be22245b05900bdcf10d5ac961b8d3aff071772a19f81b6f16ae596
+					
+			getblock "063aab866be22245b05900bdcf10d5ac961b8d3aff071772a19f81b6f16ae596"
+					
+			{
+			"hash": "063aab866be22245b05900bdcf10d5ac961b8d3aff071772a19f81b6f16ae596",
+			"confirmations": -1,
+			"size": 3897,
+			"height": 711314,
+			"version": 4,
+			"merkleroot": "bb89581693da34298f65ec2fcd2ec308f5f7dce281d64c4b8024eb4fd1ff919c",
+			"tx": [
+			"36a9482b0ff75598c727b44909cb5e88e567c0c7ac5c6e97594989394ca84980",
+			"c58c198936c132b6209b6dd03802c4b8982781d224504fcbcbc80ddcc0ec08ee",
+			"86fdedcf8c78403631ccd1a3bd51e269befc2eadc5b3c0c83c94e1b2e8dea59e",
+			"1d29d0666c04de96f4dec2cf6e0689b1d9e81554777f0095845a457a01ad1d10",
+			"bd11a72a82acf5e405f73c0f817f2f1f6d55413dfc443a3e28145b5e2efd7a41"
+			],
+			"time": 1518735074,
+			"nonce": "000055d71a62318d9c20d1e1369c1fb233274e1730a44bb7dba3835c895b0000",
+			"solution": "0110e90ed885de81e40111ace0e8f3147fdadd9c910d2f0684ffa420d1c82fc349c9f7ae64d54fae09c70fd5b661d5dbc97f376262fcac2bf17a17c3728a9830c95bf8dedf4ee1e80484a10c7c832215b612fe4b01a8915a3e824b4bfb9483b92c6ee0d95578ae1bd1240f3c74bf8af31ffcf9887b2de921bb0ea1dd70751c65bc5183dbf39f3845b5bf0867e142d59d3ee6161e68d3ab8388b9ffe3bed88404d9453624b658ae33016cb6b465c92a1ac4212a128ef69ed6f88398276a34eb1aa76b1d4aad1a298757bc76279dfec717c2b1070fcd5e0684fbf8c247626acb9e7c18acf44b864b24f3cc6200a7af31fea0a7e6eae835e747531a49590f6b5be95b126d52f37d323f9beee876468a97f7a9483b6bf2b0547e6bd5b885896d6faa2d80ddb66572375002caf4310815f15cf5d60263ef5e635a9418cb38597adb351852ef8cc34893d54d8e4e8bc258436e046b4677789109e3e35931067ecb766e23a0d221e156370468541e7e7fc97e55c37ecd5269814e11ca6025aa47d8eef1551fd730b2d8dc72494583bf51537e7522d7600ee31797d29fb8c363f09c7697c3baf87510f1e97dffe0d0fb6c5da6cf92bd41fdffa31c25c114da2fe4460b4ce9e94753907879b6897c8cfc356122db97fc2522bd41bd3635b78a5f35ba2237b47b0e26a382200d9d8347f286555eed4e6e961f8d9e71ce0640be06be8c374f11ceba4928eb1f52cda63ff7588d84a476e2add3e9882628e9a1e9668a490f9ddbf11d97e388a7534b6731f932cff8de0e05b01f13c3d5664e237df7a25f31311ee6cb9f4a7b0ab973db182a0a50da77686a779fdce214d16e29a67dd3735621761a1405b18b1489c926bd1223ace4a0792ae46e338d1eac1287dda40f719f06b501f44fd592debdbaa461232c5ce6d809a25e877922b409f5a3526b1e1fd66f01c3b89de5324aabd2c1a3e68425f87d3a80ae8d760b8e2c53cd8524206365977154d2d0f6c01a5f02000adf81fd8b888e5b526ac4c735eade32d57b7e8e1b3c0d0f0473778cfdd245a483d32b1a8e1f3a9aace50d0aae633f1b87895601d221951c6cab8148dd7cc7255e66fb4ea53905447b97b747682f3a6ef89ab99a204b2fbcf40afc58e7c35330e8cd734ec5c5fb6ced29b2839a53501aeb9398b469ae635661b603336a3f0397d88d0ff16347d7c9532e982a20a1aa3bb71676116b32a7ee4b22b67f85c74104e8358ae16d37a63e137ab245899c6860ee5b1544ed5747e7599fdeb021354711cbb62acff1e17c07741162282a15095ebe261c5a5a9ba14d1ea940e5662bcdbfb3a1e738fa168d2495bfefc9dfcbf7188938741851d49eb766db73032e820697fa98de9901ee73b4283d3d0e407cd9e7b43f6b83cfacb61fd9b5fd96b2f6730d5b2b3c5e96ab05dbc42893abc97da67f26a9b45c531fddaa7f0ad02e5625d110f8c879e5e6d39409e17e690ba5fffb861864ed82faf74981bfea335a81f0af96a3b19b69bf1a8aad54136588d37121a452924d97a22663ba38cb10bd86c2a897343783c9a13b4bd990ddf82e14590629a42c97fe79fa4de37ce45aa075d03a0a857ff4651110555aa145c629455345c1584a802d71e353e0af1b70c54f3dda1609827211d9a92e54f5f90a7e54420691459892e460d5797576c4d1e0b9ca73c6de56b108568fde61a6614fa000d567d82ee3b6c0e27b764d0edaffc4310c87e981afb44c55cfb5a528b109e2c51eb8a1818914fc958606740dbb2666c67ee71875b30946952d6564102d299ec34052bf67331f595bbe5d2fb8074c09ad30a3e856f7e141501ed3031098777a130eef011ca179c930da0487b9b8d1895d38f1e3a81dbb120798ddeaad5e85b228329a72eca0b20e8b88",
+			"bits": "1d0b17d5",
+			"difficulty": 22774991.62213874,
+			"chainwork": "00000000000000000000000000000000000000000000000000007ad377a44a9e",
+			"anchor": "2e95ed8702efb0eff9f87b4b3bfb04b9ffab13d973f4513dfcd2511dfd50f59f",
+			"previousblockhash": "0000054201c43f5e48b74b62703ffd566da02911e1c5889fb79c6a108674062d"
+			}
+
+			// Orphaned (!)
+
+			hash = 6b 66 7c ce 28 a9 da d9 f0 14 a8 e4 26 cb fb 84 ed 92 ab 1a 83 cb c0 31 b6 34 df 23 b5 ff 83 09
+			hash = 0983ffb523df34b631c0cb831aab92ed84fbcb26e4a814f0d9daa928ce7c666b 
+
+			[Decker][+] filepos = 0x4b2c06f C:\Users\ User\AppData\Roaming/Komodo/blocks/blk00013.dat
+			[Decker] blockSize = 3897
+			[Decker][+] filepos = 0x4b2cfb0 C:\Users\ User\AppData\Roaming/Komodo/blocks/blk00013.dat
+			[Decker] blockSize = 1589
+
+			warning: in block 0715978424b86a3aa2c976a63fea7ebc8d632c991194de7bca3c083998f0097b failed to locate parent block 046f2ea0280b5cb953474d7ac906bbc63b388875eeb0e74d276429685557b542
+							  210928 -- 210927
+			*/
 
             auto block = Block::alloc();
             block->init(hash, &blockFile, blockSize, prevBlock, blockOffset);
