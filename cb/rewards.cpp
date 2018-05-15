@@ -14,6 +14,8 @@ struct Rewards : public Callback {
 
     bool fullDump;
     uint64_t reward;
+    uint64_t totalsupply = 0;
+
     size_t nbInputs;
     bool hasGenInput;
     uint64_t currBlock;
@@ -133,6 +135,8 @@ struct Rewards : public Callback {
         }
 
         reward += value;
+        totalsupply += value;
+
         if(!fullDump) {
             return;
         }
@@ -179,7 +183,8 @@ struct Rewards : public Callback {
     virtual void endBlock(
         const Block *b
     ) {
-        uint64_t baseReward = getBaseReward(currBlock);
+        //uint64_t baseReward = getBaseReward(currBlock);
+	uint64_t baseReward = 3 * 100000000; // 3 * COIN
         int64_t feesEarned = reward - (int64_t)baseReward;   // This sometimes goes <0 for some early, buggy blocks
         printf(
             "Summary for block %7d : baseReward=%16.8f fees=%16.8f total=%16.8f\n",
@@ -189,6 +194,12 @@ struct Rewards : public Callback {
             satoshisToNormaForm(reward)
         );
     }
+
+    virtual void wrapup() {
+	printf("\n");
+        printf("Coin Supply: %16.8f\n", satoshisToNormaForm(totalsupply));
+    }
+
 };
 
 static Rewards rewards;
